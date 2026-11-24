@@ -181,9 +181,16 @@ async def get_audio(job_id: str, _: None = Depends(require_admin)):
         raise HTTPException(status_code=400, detail="Invalid job id.")
     job = storage.get("jobs", job_id)
     path = (job or {}).get("preview_path")
-    if not path or not os.path.isfile(path):
+    if not path:
         raise HTTPException(status_code=404, detail="Audio not available.")
-    return FileResponse(path, media_type="audio/mpeg", filename=f"{job_id}.mp3")
+
+    audio_root = os.path.realpath(os.getenv("AUDIO_OUTPUT_DIR", os.getcwd()))
+    safe_path = os.path.realpath(path)
+    if os.path.commonpath([audio_root, safe_path]) != audio_root:
+        raise HTTPException(status_code=404, detail="Audio not available.")
+    if not os.path.isfile(safe_path):
+        raise HTTPException(status_code=404, detail="Audio not available.")
+    return FileResponse(safe_path, media_type="audio/mpeg", filename=f"{job_id}.mp3")
 
 
 @app.post("/api/releases/validate")
