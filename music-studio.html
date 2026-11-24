@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b1220">
+  <title>AI Music Ops 0.01 — Music Studio</title>
+  <link rel="stylesheet" href="music-studio.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html"><span class="brand-mark">♫</span> ZI <small>SONG STUDIO</small></a>
+    <nav><a href="index.html">Operations</a><a class="active" href="music-studio.html">Music Studio</a><a href="releases.html">Releases</a></nav>
+  </header>
+  <main class="shell">
+    <section class="intro">
+      <p class="eyebrow">CREATIVE WORKSPACE / PHASE 3</p>
+      <h1>Make something <span>unforgettable.</span></h1>
+      <p>Create complete songs with AI vocals, original lyrics, and a library that stays yours.</p>
+    </section>
+    <section class="studio-grid">
+      <form id="studio-form" class="panel">
+        <div class="panel-heading"><div><p class="eyebrow">TRACK BRIEF</p><h2>Build your sound</h2></div><span class="step">01 / 02</span></div>
+        <label>Track name<input id="track-name" maxlength="80" placeholder="Midnight in Motion"></label>
+        <label>Describe your music<textarea id="prompt" required maxlength="900" rows="4" placeholder="A cinematic electronic track with warm analog synths, a deep pulsing bassline and an uplifting chorus..."></textarea></label>
+        <div class="two-col">
+          <label>Genre<select id="genre"><option>Electronic</option><option>Pop</option><option>Hip-hop</option><option>Ambient</option><option>Rock</option><option>Jazz</option><option>Cinematic</option><option>Lo-fi</option><option>Classical</option><option>Afrobeats</option></select></label>
+          <label>Mood<select id="mood"><option>Uplifting</option><option>Dark</option><option>Dreamy</option><option>Energetic</option><option>Melancholic</option><option>Peaceful</option><option>Epic</option><option>Romantic</option></select></label>
+        </div>
+        <div class="two-col">
+          <label>Lead instruments<select id="instruments"><option>Synthesizers</option><option>Piano</option><option>Acoustic guitar</option><option>Electric guitar</option><option>Strings</option><option>Drums and percussion</option><option>Mixed ensemble</option></select><small>Choose the sound behind the vocal performance.</small></label>
+          <label>Energy<select id="energy"><option>Medium</option><option>Low</option><option>High</option><option>Intense</option></select></label>
+        </div>
+        <div class="two-col">
+          <label>Lyrics source<select id="lyrics-mode"><option value="ai">Write lyrics with AI</option><option value="user">Use my lyrics</option></select></label>
+          <label>Vocal style<input id="vocal-style" maxlength="120" placeholder="Warm soulful female lead"></label>
+        </div>
+        <label id="lyrics-wrap" hidden>Your lyrics<textarea id="lyrics" rows="7" maxlength="3500" placeholder="Paste your verse, chorus, bridge…"></textarea><small>Your words are sent to the configured music model as lyrics.</small></label>
+        <label class="range-label">Duration <strong><span id="duration-value">190</span> seconds</strong><input id="duration" type="range" min="180" max="300" step="5" value="190"><small>Minimum 180 s. Vocal-capable Replicate model required; configure it on the backend.</small></label>
+        <details class="integration-settings"><summary>Connect your accounts</summary>
+          <label>Sign-in email<input id="supabase-email" type="email" placeholder="you@example.com"></label>
+          <button id="supabase-login" class="primary" type="button">Email me a sign-in link</button>
+          <label>Supabase project URL<input id="supabase-url" type="url" placeholder="https://YOUR_PROJECT.supabase.co"></label>
+          <label>Supabase publishable / anon key<input id="supabase-key" type="password" autocomplete="off" placeholder="sb_publishable_…"></label>
+          <label>Spotify app client ID<input id="spotify-client-id" autocomplete="off" placeholder="Spotify Developer Dashboard client ID"></label>
+          <button id="spotify-connect" class="primary" type="button">Connect Spotify</button>
+          <p id="account-status" class="notice">Supabase stores your songs. Spotify connects playlists and music discovery.</p>
+        </details>
+        <label>Backend admin token<input id="admin-token" type="password" autocomplete="off" placeholder="Only if your backend requires it"></label>
+        <label>Backend URL<input id="api-base" type="url" placeholder="https://your-backend.example.com" autocomplete="url"><small>Enter your deployed FastAPI address. Do not enter an API key here.</small></label>
+        <button id="generate" class="primary" type="submit">✦ Create complete song</button>
+        <p id="notice" class="notice" role="status">Connect your backend to start generating.</p>
+      </form>
+      <aside class="panel result-panel">
+        <div class="panel-heading"><div><p class="eyebrow">YOUR CREATION</p><h2>Track preview</h2></div><span class="status" id="status">STANDBY</span></div>
+        <div class="artwork"><div class="soundwave">〰</div><div class="art-caption">AI MUSIC OPS<br><strong>STUDIO SESSION</strong></div></div>
+        <h3 id="result-title">Your next track starts here</h3>
+        <p id="result-description" class="muted">Your generated audio will appear here when the job completes.</p>
+        <audio id="player" controls hidden></audio>
+        <a id="download" class="download" hidden download="ai-music-ops-track.mp3">Download preview MP3 ↓</a>
+        <a id="to-release" class="download" hidden href="releases.html">Prepare for RouteNote →</a>
+        <div class="job-meta"><span>ENGINE</span><strong id="engine">Replicate</strong></div>
+        <div class="job-meta"><span>OUTPUT</span><strong>Full song · vocals + lyrics</strong></div>
+        <button id="save-song" class="primary" type="button" disabled>Save song to my library</button>
+        <button id="spotify-playlist" class="primary" type="button" disabled>Find Spotify matches</button>
+        <div class="job-meta"><span>JOB ID</span><strong id="job-id">—</strong></div>
+      </aside>
+    </section>
+    <footer>Zi · Your ideas, orchestrated. <a href="https://github.com/CloudApp2026/Zi">GitHub</a></footer>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="music-studio.js" defer></script>
+</body>
+</html>
