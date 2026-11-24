@@ -233,10 +233,18 @@ async def download_package(release_id: str, _: None = Depends(require_admin)):
     if not rel:
         raise HTTPException(status_code=404, detail="Package not available.")
     path = rel.get("package_path")
-    if not path or not os.path.isfile(path):
+    if not path:
         raise HTTPException(status_code=404, detail="Package not available.")
-    return FileResponse(path, media_type="application/zip",
-                        filename=os.path.basename(path))
+
+    packages_root = os.path.realpath(os.path.join("data", "packages"))
+    candidate = os.path.realpath(path)
+    if os.path.commonpath([packages_root, candidate]) != packages_root:
+        raise HTTPException(status_code=404, detail="Package not available.")
+
+    if not os.path.isfile(candidate):
+        raise HTTPException(status_code=404, detail="Package not available.")
+    return FileResponse(candidate, media_type="application/zip",
+                        filename=os.path.basename(candidate))
 
 
 @app.post("/api/releases/{release_id}/submitted")
