@@ -1,4 +1,5 @@
 import asyncio
+import hmac
 import json
 import os
 import re
@@ -18,15 +19,18 @@ from connectors import REGISTRY
 from connectors.base import ReleaseMetadata
 
 REPLICATE_TOKEN = os.getenv("REPLICATE_API_TOKEN", "")
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:8080").split(",")
 ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "")
 BOT_ENABLED = os.getenv("BOT_ENABLED", "1") == "1"
 JOB_ID = r"^[A-Za-z0-9_-]{4,64}$"
 
 
 def require_admin(authorization: str = Header(default="")):
-    """Write endpoints spend Replicate credits; protect them when ADMIN_TOKEN is set."""
-    if ADMIN_TOKEN and authorization != f"Bearer {ADMIN_TOKEN}":
+    """Protect operator-only and sensitive resource endpoints."""
+    if not ADMIN_TOKEN:
+        raise HTTPException(status_code=503, detail="ADMIN_TOKEN is not configured.")
+    scheme, _, credentials = authorization.partition(" ")
+    if scheme.lower() != "bearer" or not hmac.compare_digest(credentials, ADMIN_TOKEN):
         raise HTTPException(status_code=401, detail="Missing or invalid admin token.")
 
 
@@ -160,7 +164,7 @@ async def generate_lyrics(req: LyricsRequest, _: None = Depends(require_admin)):
         return {"lyrics": lyrics.strip()}
 
 @app.get("/api/generations/{job_id}")
-async def get_generation(job_id: str):
+async def get_generation(job_id: str, _: None = Depends(require_admin)):
     if not re.fullmatch(r"[A-Za-z0-9_-]{4,64}", job_id):
         raise HTTPException(status_code=400, detail="Invalid job id.")
     try:
@@ -172,10 +176,12 @@ async def get_generation(job_id: str):
 
 
 @app.get("/api/generations/{job_id}/audio")
-async def get_audio(job_id: str):
-    job = storage.get("jobs", job_id) if re.fullmatch(r"[A-Za-z0-9_-]{4,64}", job_id) else None
+async def get_audio(job_id: str, _: None = Depends(require_admin)):
+    if not re.fullmatch(r"[A-Za-z0-9_-]{4,64}", job_id):
+        raise HTTPException(status_code=400, detail="Invalid job id.")
+    job = storage.get("jobs", job_id)
     path = (job or {}).get("preview_path")
-    if not path or not os.path.exists(path):
+    if not path or not os.path.isfile(path):
         raise HTTPException(status_code=404, detail="Audio not available.")
     return FileResponse(path, media_type="audio/mpeg", filename=f"{job_id}.mp3")
 
@@ -200,12 +206,12 @@ async def create_release(req: ReleaseRequest, _: None = Depends(require_admin)):
 
 
 @app.get("/api/releases")
-async def list_releases():
+async def list_releases(_: None = Depends(require_admin)):
     return storage.list_("releases")
 
 
 @app.get("/api/releases/{release_id}")
-async def get_release(release_id: str):
+async def get_release(release_id: str, _: None = Depends(require_admin)):
     rel = storage.get("releases", release_id)
     if not rel:
         raise HTTPException(status_code=404, detail="Release not found.")
@@ -214,11 +220,16 @@ async def get_release(release_id: str):
 
 @app.get("/api/releases/{release_id}/package")
 async def download_package(release_id: str, _: None = Depends(require_admin)):
+    if not re.fullmatch(r"[A-Za-z0-9_-]{4,64}", release_id):
+        raise HTTPException(status_code=400, detail="Invalid release id.")
     rel = storage.get("releases", release_id)
-    if not rel or not rel.get("package_path") or not os.path.exists(rel["package_path"]):
+    if not rel:
         raise HTTPException(status_code=404, detail="Package not available.")
-    return FileResponse(rel["package_path"], media_type="application/zip",
-                        filename=os.path.basename(rel["package_path"]))
+    path = rel.get("package_path")
+    if not path or not os.path.isfile(path):
+        raise HTTPException(status_code=404, detail="Package not available.")
+    return FileResponse(path, media_type="application/zip",
+                        filename=os.path.basename(path))
 
 
 @app.post("/api/releases/{release_id}/submitted")
@@ -235,5 +246,5 @@ async def bot_enqueue(brief: BotBrief, _: None = Depends(require_admin)):
 
 
 @app.get("/api/bot/queue")
-async def bot_queue():
+async def bot_queue(_: None = Depends(require_admin)):
     return storage.list_("queue")
