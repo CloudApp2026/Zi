@@ -78,9 +78,17 @@ class RouteNoteConnector(Distributor):
         csv_buf = io.StringIO()
         wr = csv.writer(csv_buf)
         wr.writerow(["track_no", "title", "artist", "explicit", "instrumental", "language", "isrc", "file"])
+
+        def csv_safe(value) -> str:
+            text = str(value)
+            if text.lstrip().startswith(("=", "+", "-", "@")) or text.startswith(("\t", "\r", "\n")):
+                return "'" + text
+            return text
+
         for t in form["step_3_tracks"]:
-            wr.writerow([t["Track No."], t["Title"], t["Artist"], t["Explicit"], t["Instrumental"],
-                         t["Language"], t["ISRC"], t["File"]])
+            wr.writerow([csv_safe(t["Track No."]), csv_safe(t["Title"]), csv_safe(t["Artist"]),
+                         csv_safe(t["Explicit"]), csv_safe(t["Instrumental"]),
+                         csv_safe(t["Language"]), csv_safe(t["ISRC"]), csv_safe(t["File"])])
         steps = (
             f"Upload to RouteNote ({self.UPLOAD_URL})\n"
             "1. Log in -> Distribution -> Create New Release.\n"

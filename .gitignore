@@ -7,3 +7,10 @@ backend/data/
 backend/smoke/
 smoke/
 *.db
+
+data/
+work/
+*.zip
+*.mp3
+*.flac
+*.wav
